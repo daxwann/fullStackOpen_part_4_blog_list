@@ -19,7 +19,7 @@ const blogSchema = mongoose.Schema({
 
 const Blog = mongoose.model('Blog', blogSchema);
 
-const mongoUrl = process.env.MONGO_URL || 'mongodb://db:27017/blog-list';
+const mongoUrl = process.env.MONGODB_URI || 'mongodb://db:27017/blog-list';
 
 mongoose.connect(mongoUrl, {
   useNewUrlParser: true,
