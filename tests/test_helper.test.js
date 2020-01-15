@@ -29,7 +29,7 @@ const newBlog = {
 };
 
 const nonExistingId = async () => {
-  const blog = new Blog({
+  let blog = new Blog({
     title: 'First class tests',
     author: 'Robert C. Martin',
     url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html',
@@ -38,7 +38,7 @@ const nonExistingId = async () => {
 
   await blog.save();
   await blog.remove();
-
+  
   return blog.id;
 };
 

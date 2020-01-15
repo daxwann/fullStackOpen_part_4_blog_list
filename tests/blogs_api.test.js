@@ -46,6 +46,39 @@ describe('Get posts', () => {
   });
 });
 
+describe('Get one specified post', () => {
+  test('succeeds with a valid id', async () => {
+    const posts = await testHelper.blogsInDb();
+
+    const firstPost = posts[0];
+
+    const resultPost = await api
+      .get(`/api/blogs/${firstPost.id}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+
+    expect(resultPost.body).toEqual(firstPost);
+  });
+
+  test('fails with statuscode 404 if note does not exist', async () => {
+    const validNonexistingId = await testHelper.nonExistingId();
+
+    console.log('nonexisting id', validNonexistingId);
+
+    await api
+      .get(`/api/blogs/${validNonexistingId}`)
+      .expect(404);
+  });
+
+  test('fails with statuscode 400 id is invalid', async () => {
+    const invalidId = '5a3d5da59070081a82a3445';
+
+    await api
+      .get(`/api/blogs/${invalidId}`)
+      .expect(400);
+  });
+});
+
 describe('Create post', () => {
   test('a valid blog can be added ', async () => {
     await api
@@ -97,6 +130,52 @@ describe('Create post', () => {
 
     const blog = await Blog.find({title: 'TDD harms architecture'});
     expect(blog[0].likes).toBe(0);
+  });
+});
+
+describe('updating a blog', () => {
+  test('succeeds with 200 if id and input are valid', async () => {
+    const blogsAtStart = await testHelper.blogsInDb();
+    const blogToUpdate = blogsAtStart[0];
+    const updatedTitle = {
+      title: 'New title'
+    };
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updatedTitle)
+      .expect(200);
+
+    const blogsAtEnd = await testHelper.blogsInDb();
+
+    expect(blogsAtEnd.length).toBe(
+      testHelper.initialBlogs.length
+    );
+
+    const titles = blogsAtEnd.map(r => r.title);
+
+    expect(titles).toContain(updatedTitle.title);
+  });
+});
+
+describe('deletion of a note', () => {
+  test('succeeds with status code 204 if id is valid', async () => {
+    const blogsAtStart = await testHelper.blogsInDb();
+    const blogToDelete = blogsAtStart[0];
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(204);
+
+    const blogsAtEnd = await testHelper.blogsInDb();
+
+    expect(blogsAtEnd.length).toBe(
+      testHelper.initialBlogs.length - 1
+    );
+
+    const titles = blogsAtEnd.map(r => r.title);
+
+    expect(titles).not.toContain(blogToDelete.title);
   });
 });
 
