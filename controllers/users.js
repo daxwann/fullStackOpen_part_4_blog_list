@@ -17,15 +17,20 @@ usersRouter.post('/', async (request, response, next) => {
 
     const savedUser = await user.save();
 
-    response.json(savedUser);
+    response.status(201).json(savedUser);
   } catch (exception) {
     next(exception);
   }
 });
 
 usersRouter.get('/', async (request, response) => {
-  const users = await User.find({});
-  response.json(users.map(u => u.toJSON()));
+  const users = await User.find({}).populate('blogs', {
+    title: 1,
+    author: 1,
+    url: 1,
+    like: 1
+  });
+  response.status(200).json(users.map(u => u.toJSON()));
 });
 
 module.exports = usersRouter;
