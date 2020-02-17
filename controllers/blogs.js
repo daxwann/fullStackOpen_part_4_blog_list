@@ -1,10 +1,20 @@
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
+const jwt = require('jsonwebtoken');
+
+const getTokenFrom = request => {
+  const authorization = request.get('authorization');
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.substring(7);
+  }
+
+  return null;
+};
 
 blogsRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({}).populate('user',  { name: 1, username: 1 });
-  
+  const blogs = await Blog.find({}).populate('user', { name: 1, username: 1 });
+
   response.json(blogs);
 });
 
@@ -19,32 +29,41 @@ blogsRouter.get('/:id', async (request, response, next) => {
     } else {
       response.status(404).json({ error: 'cannot find blog' });
     }
-  } catch(exception) {
+  } catch (exception) {
     next(exception);
   }
 });
 
 blogsRouter.post('/', async (request, response, next) => {
   const body = request.body;
-
-  const user = await User.findById(body.userId);
-
-  const newBlog = {
-    title: body.title,
-    author: user.name,
-    likes: body.likes,
-    user: user._id,
-    url: body.url
-  };
-
-  const blog = new Blog(newBlog);
+  const token = getTokenFrom(request);
+  if (!token) {
+    return response.status(401).json({ error: 'token missing or invalid' });
+  }
 
   try {
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    if (!decodedToken || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' });
+    }
+
+    const user = await User.findById(decodedToken.id);
+
+    const newBlog = {
+      title: body.title,
+      author: user.name,
+      likes: body.likes,
+      user: user._id,
+      url: body.url
+    };
+
+    const blog = new Blog(newBlog);
+
     const result = await blog.save();
     user.blogs = user.blogs.concat(result._id);
     await user.save();
     response.status(201).json(result);
-  } catch(exception) {
+  } catch (exception) {
     next(exception);
   }
 });
@@ -60,7 +79,7 @@ blogsRouter.put('/:id', async (request, response, next) => {
     } else {
       response.status(404).json({ error: 'cannot find blog' });
     }
-  } catch(exception) {
+  } catch (exception) {
     next(exception);
   }
 });
@@ -75,7 +94,7 @@ blogsRouter.delete('/:id', async (request, response, next) => {
     } else {
       response.status(404).json({ error: 'cannot find blog' });
     }
-  } catch(exception) {
+  } catch (exception) {
     next(exception);
   }
 });
