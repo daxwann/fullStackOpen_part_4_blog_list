@@ -30,6 +30,8 @@ mongoose
     logger.error('error connection to MongoDB:', error.message);
   });
 
+app.use(middleware.tokenExtractor);
+
 // route handling
 app.use('/api/blogs', blogsRouter);
 app.use('/api/users', usersRouter);
